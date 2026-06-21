@@ -1,4 +1,4 @@
-from openai import OpenAI
+from groq import Groq
 import os
 import json
 
@@ -7,10 +7,10 @@ client = None
 def get_client():
     global client
     if client is None:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
     return client
 
-MODEL = "gpt-4o-mini"
+MODEL = "llama-3.3-70b-versatile"
 
 def call_llm(prompt: str) -> str:
     response = get_client().chat.completions.create(
@@ -61,7 +61,3 @@ Previous response: {raw_response}
 Return ONLY valid JSON. No markdown, no backticks, no extra text.
 """
     raise RuntimeError(f"Failed after {max_attempts} attempts. Last error: {str(last_error)}")
-
-def check_safety(user_input: str) -> bool:
-    response = get_client().moderations.create(input=user_input)
-    return response.results[0].flagged
