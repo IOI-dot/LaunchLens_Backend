@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any
 from orchestrator import generate_execution_plan
+from agents import clarification_agent
 
 app = FastAPI()
 
@@ -15,7 +16,18 @@ app.add_middleware(
 
 class IdeaRequest(BaseModel):
     user_input: str
-    context: Dict[str, Any] = {}   # budget / time / tech / timeline from Phase 2
+    context: Dict[str, Any] = {}
+
+class ClarifyRequest(BaseModel):
+    user_input: str
+
+@app.post("/api/clarify")
+async def clarify(req: ClarifyRequest):
+    try:
+        questions = clarification_agent(req.user_input)
+        return {"questions": questions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/plan")
 async def plan(req: IdeaRequest):

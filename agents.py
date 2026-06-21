@@ -1,28 +1,32 @@
 import json
 from llm import call_llm_json
-from prompts import DISCOVERY_PROMPT, ANALYSIS_PROMPT, PLANNING_PROMPT
+from prompts import DISCOVERY_PROMPT, ANALYSIS_PROMPT, PLANNING_PROMPT, CLARIFICATION_PROMPT
 
 
 def _context_block(context: dict) -> str:
-    """Build a prompt snippet from the user's Phase 2 answers."""
+    """Build a prompt snippet from the user's Phase 2 question-answer pairs."""
     if not context:
         return ""
+    answers = context.get("answers", [])
+    if not answers:
+        return ""
     parts = []
-    if context.get("budget"):
-        parts.append(f"- Financial situation: {context['budget']}")
-    if context.get("time"):
-        parts.append(f"- Weekly time available: {context['time']}")
-    if context.get("tech"):
-        parts.append(f"- Technical background: {context['tech']}")
-    if context.get("timeline"):
-        parts.append(f"- Target timeline: {context['timeline']}")
+    for a in answers:
+        if a.get("question") and a.get("answer"):
+            parts.append(f"- {a['question']}: {a['answer']}")
     if not parts:
         return ""
     return (
-        "\n\nUser Profile (factor this into EVERY recommendation — "
-        "milestones, costs, timelines, and first actions must be realistic given these constraints):\n"
+        "\n\nUser Context (calibrate ALL recommendations to these specifics — "
+        "milestones, timelines, costs, and first steps must reflect this exactly):\n"
         + "\n".join(parts) + "\n"
     )
+
+
+def clarification_agent(user_input: str) -> list:
+    prompt = f"{CLARIFICATION_PROMPT}\n\nUser Idea:\n{user_input}"
+    result = call_llm_json(prompt)
+    return result.get("questions", [])
 
 
 def discovery_agent(user_input: str, context: dict = None):

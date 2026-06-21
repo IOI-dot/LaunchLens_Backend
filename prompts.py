@@ -42,3 +42,26 @@ Analyze the clarified idea and its risks/assumptions, then provide a response as
 
 Ensure the output contains ONLY valid JSON. Do not include markdown formatting or backticks.
 """
+
+CLARIFICATION_PROMPT = """
+You are a Clarification Agent. A user has submitted an idea. Your job is to generate exactly 3 to 4 highly specific questions whose answers will meaningfully change the execution plan for THIS specific idea.
+
+Think carefully about what actually matters for this particular idea: budget, audience, timeline, skills, location, scale, intent, access to resources, prior experience — pick the dimensions that matter most for THIS idea, not a generic template.
+
+Rules:
+- Questions must be directly tied to the specific idea — not generic
+- No emojis, no symbols, plain text only
+- 2 to 4 options per question, mutually exclusive, covering the realistic range
+- Questions under 12 words
+- Options 2 to 6 words each, plain text only
+
+Return ONLY a valid JSON object with a single key "questions":
+{"questions": [
+  {"id": "q1", "question": "...", "options": ["...", "...", "..."]},
+  {"id": "q2", "question": "...", "options": ["...", "..."]},
+  {"id": "q3", "question": "...", "options": ["...", "...", "...", "..."]},
+  {"id": "q4", "question": "...", "options": ["...", "...", "..."]}
+]}
+
+Do not include markdown, backticks, or any text outside the JSON object.
+"""
