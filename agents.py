@@ -2,11 +2,39 @@ import json
 from llm import call_llm_json
 from prompts import DISCOVERY_PROMPT, ANALYSIS_PROMPT, PLANNING_PROMPT
 
-def discovery_agent(user_input: str):
-    prompt = f"{DISCOVERY_PROMPT}\n\nUser Idea:\n{user_input}"
+
+def _context_block(context: dict) -> str:
+    """Build a prompt snippet from the user's Phase 2 answers."""
+    if not context:
+        return ""
+    parts = []
+    if context.get("budget"):
+        parts.append(f"- Financial situation: {context['budget']}")
+    if context.get("time"):
+        parts.append(f"- Weekly time available: {context['time']}")
+    if context.get("tech"):
+        parts.append(f"- Technical background: {context['tech']}")
+    if context.get("timeline"):
+        parts.append(f"- Target timeline: {context['timeline']}")
+    if not parts:
+        return ""
+    return (
+        "\n\nUser Profile (factor this into EVERY recommendation — "
+        "milestones, costs, timelines, and first actions must be realistic given these constraints):\n"
+        + "\n".join(parts) + "\n"
+    )
+
+
+def discovery_agent(user_input: str, context: dict = None):
+    context = context or {}
+    ctx = _context_block(context)
+    prompt = f"{DISCOVERY_PROMPT}{ctx}\n\nUser Idea:\n{user_input}"
     return call_llm_json(prompt)
 
-def analysis_agent(discovery_output: dict):
+
+def analysis_agent(discovery_output: dict, context: dict = None):
+    context = context or {}
+    ctx = _context_block(context)
     project_type = discovery_output.get("project_type", "serious business project")
     if project_type == "personal hobby":
         focus = "Focus on ease of implementation, personal learning, and cost minimization."
@@ -18,14 +46,17 @@ def analysis_agent(discovery_output: dict):
 {ANALYSIS_PROMPT}
 
 Project Type: {project_type}
-Analysis Focus: {focus}
+Analysis Focus: {focus}{ctx}
 
 Idea:
 {json.dumps(discovery_output, indent=2)}
 """
     return call_llm_json(prompt)
 
-def planning_agent(discovery_output: dict, analysis_output: dict):
+
+def planning_agent(discovery_output: dict, analysis_output: dict, context: dict = None):
+    context = context or {}
+    ctx = _context_block(context)
     project_type = discovery_output.get("project_type", "serious business project")
     if project_type == "personal hobby":
         focus = "Prioritize quick setup, minimal cost, and developer enjoyment."
@@ -37,7 +68,7 @@ def planning_agent(discovery_output: dict, analysis_output: dict):
 {PLANNING_PROMPT}
 
 Project Type: {project_type}
-Planning Focus: {focus}
+Planning Focus: {focus}{ctx}
 
 Idea:
 {json.dumps(discovery_output, indent=2)}
